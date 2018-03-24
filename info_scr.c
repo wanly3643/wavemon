@@ -534,6 +534,14 @@ static void display_info(WINDOW *w_if, WINDOW *w_info)
 	wrefresh(w_info);
 }
 
+void print_netinfo(char *json) {
+	struct if_info info;
+
+	if_getinf(conf_ifname(), &info);
+
+	const char *template = "{\"interface\":\"%s\", \"ssid\":\"%s\", \"signal_level\": %d}"
+}
+
 static void display_netinfo(WINDOW *w_net)
 {
 	struct if_info info;
