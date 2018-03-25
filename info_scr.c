@@ -535,9 +535,8 @@ static void display_info(WINDOW *w_if, WINDOW *w_info)
 }
 
 void print_netinfo(char *json) {
-	struct if_info info;
-
-	if_getinf(conf_ifname(), &info);
+	struct iw_nl80211_linkstat data;
+	iw_nl80211_get_linkstat(&data);
 
 	const char *template = "{\"interface\":\"%s\", \"ssid\":\"%s\", \"signal_level\": %d}"
 }
