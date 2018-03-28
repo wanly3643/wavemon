@@ -171,114 +171,6 @@ static void display_levels(void)
 	wrefresh(w_levels);
 }
 
-
-
-static void print_levels(void)
-{
-	static float qual, signal, noise, ssnr;
-	/*
-	 * FIXME: revise the scale implementation. It does not work
-	 *        satisfactorily, maybe it is better to have a simple
-	 *        solution using 3 levels of different colour.
-	 */
-	int8_t nscale[2] = { conf.noise_min, conf.noise_max },
-	     lvlscale[2] = { -40, -20};
-	char tmp[0x100];
-	int line;
-	bool noise_data_valid;
-	int sig_qual = -1, sig_qual_max, sig_level;
-
-	noise_data_valid = iw_nl80211_have_survey_data(&linkstat.data);
-	sig_level = linkstat.data.signal_avg ?: linkstat.data.signal;
-
-	/* See comments in iw_cache_update */
-	if (sig_level == 0)
-		sig_level = linkstat.data.bss_signal;
-
-	for (line = 1; line <= WH_LEVEL; line++)
-		mvwclrtoborder(w_levels, line, 1);
-
-	if (linkstat.data.bss_signal_qual) {
-		/* BSS_SIGNAL_UNSPEC is scaled 0..100 */
-		sig_qual     = linkstat.data.bss_signal_qual;
-		sig_qual_max = 100;
-	} else if (sig_level) {
-		if (sig_level < -110)
-			sig_qual = 0;
-		else if (sig_level > -40)
-			sig_qual = 70;
-		else
-			sig_qual = sig_level + 110;
-		sig_qual_max = 70;
-	}
-
-	line = 1;
-
-	/* Noise data is rare. Use the space for spreading out. */
-	if (!noise_data_valid)
-		line++;
-
-	if (sig_qual == -1) {
-		line++;
-	} else {
-		qual = ewma(qual, sig_qual, conf.meter_decay / 100.0);
-
-		mvwaddstr(w_levels, line++, 1, "link quality: ");
-		sprintf(tmp, "%0.f%%  ", (1e2 * qual)/sig_qual_max);
-		waddstr_b(w_levels, tmp);
-		sprintf(tmp, "(%0.f/%d)  ", qual, sig_qual_max);
-		waddstr(w_levels, tmp);
-
-		waddbar(w_levels, line++, qual, 0, sig_qual_max, lvlscale, true);
-	}
-
-	/* Spacer */
-	line++;
-	if (!noise_data_valid)
-		line++;
-
-	if (sig_level != 0) {
-		signal = ewma(signal, sig_level, conf.meter_decay / 100.0);
-
-		mvwaddstr(w_levels, line++, 1, "signal level: ");
-		sprintf(tmp, "%.0f dBm (%s)", signal, dbm2units(signal));
-		waddstr_b(w_levels, tmp);
-
-		waddbar(w_levels, line, signal, conf.sig_min, conf.sig_max,
-			lvlscale, true);
-		if (conf.lthreshold_action)
-			waddthreshold(w_levels, line, signal, conf.lthreshold,
-				      conf.sig_min, conf.sig_max, lvlscale, '>');
-		if (conf.hthreshold_action)
-			waddthreshold(w_levels, line, signal, conf.hthreshold,
-				      conf.sig_min, conf.sig_max, lvlscale, '<');
-	}
-
-	line++;
-
-	if (noise_data_valid) {
-		noise = ewma(noise, linkstat.data.survey.noise, conf.meter_decay / 100.0);
-
-		mvwaddstr(w_levels, line++, 1, "noise level:  ");
-		sprintf(tmp, "%.0f dBm (%s)", noise, dbm2units(noise));
-		waddstr_b(w_levels, tmp);
-
-		waddbar(w_levels, line++, noise, conf.noise_min, conf.noise_max,
-			nscale, false);
-	}
-
-	if (noise_data_valid && sig_level) {
-		ssnr = ewma(ssnr, sig_level - linkstat.data.survey.noise,
-				  conf.meter_decay / 100.0);
-
-		mvwaddstr(w_levels, line++, 1, "SNR:           ");
-		sprintf(tmp, "%.0f dB", ssnr);
-		waddstr_b(w_levels, tmp);
-	}
-
-	wrefresh(w_levels);
-}
-
 static void display_stats(void)
 {
 	char tmp[0x100];
@@ -647,7 +539,6 @@ void print_netinfo(wifi_stat *p_stat) {
 	struct iw_range	range;
 	struct iw_nl80211_ifstat ifs;
 	struct iw_nl80211_reg ir;
-	char tmp[0x100];
 
 	iw_getinf_range(conf_ifname(), &range);
 	dyn_info_get(&info, conf_ifname());
@@ -657,7 +548,8 @@ void print_netinfo(wifi_stat *p_stat) {
 	/*
 	 * Interface Part
 	 */
-	sprintf(p_stat->interface, "%s", info.name);
+	sprintf(p_stat->interface, "%s", conf_ifname());
+	sprintf(p_stat->protocol, "%s", info.name);
 
 	/* PHY */
 	p_stat->phy = ifs.phy;
@@ -699,7 +591,7 @@ void print_netinfo(wifi_stat *p_stat) {
 
 		if (linkstat.data.status == NL80211_BSS_STATUS_ASSOCIATED) {
 			sprintf(p_stat->connected_time, "%s", pretty_time(linkstat.data.connected_time));
-			pstat->inactive_time = (float)linkstat.data.inactive_time/1e3);
+			p_stat->inactive_time = (float)linkstat.data.inactive_time/1e3;
 		} else {
 			p_stat->connected_time[0] = 0;
 		}
@@ -707,7 +599,7 @@ void print_netinfo(wifi_stat *p_stat) {
 	
 	/* Frequency / channel */
 	if (ifs.freq) {
-		p_stat->freq = ifs.freq);
+		p_stat->freq = ifs.freq;
 
 		/* The following condition should in theory never happen */
 		if (linkstat.data.survey.freq && linkstat.data.survey.freq != ifs.freq) {
@@ -752,11 +644,11 @@ void print_netinfo(wifi_stat *p_stat) {
 			p_stat->channel_survey_scan = linkstat.data.survey.time.scan;
 		}
 	} else if (linkstat.data.tx_bitrate[0] && linkstat.data.rx_bitrate[0]) {
-		p_stat->channel_rx_bitrate = linkstat.data.rx_bitrate;
+		sprintf(p_stat->channel_rx_bitrate, "%s", linkstat.data.rx_bitrate);
 
 		p_stat->channel_expected_thru = linkstat.data.expected_thru;
 
-		p_stat->channel_tx_bitrate = linkstat.data.tx_bitrate;
+		sprintf(p_stat->channel_tx_bitrate, "%s", linkstat.data.tx_bitrate);
 	}
 
 	if (linkstat.data.beacons) {
@@ -768,7 +660,7 @@ void print_netinfo(wifi_stat *p_stat) {
 
 		p_stat->beacon_interval = (linkstat.data.beacon_int * 1024.0)/1e6;
 
-		p_stat->dtim_period = linkstat.data.dtim_period;
+		p_stat->beacon_dtim_period = linkstat.data.dtim_period;
 	} else {
 		p_stat->flag_cts_protection = linkstat.data.cts_protection;
 		p_stat->flag_wme = linkstat.data.wme;
@@ -795,8 +687,6 @@ void print_netinfo(wifi_stat *p_stat) {
 		sprintf(p_stat->cap_txpower, "%s", format_txpower(&info.txpower));
 	}
 
-	wmove(w_info, 6, 1);
-	waddstr(w_info, "retry: ");
 	if (info.cap_retry)
 		sprintf(p_stat->cap_retry, "%s", format_retry(&info.retry, &range));
 	else

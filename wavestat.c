@@ -91,6 +91,12 @@ static const struct {
  */
 static volatile sig_atomic_t	env_winch_ready;
 
+void print_as_json(wifi_stat *p_stat) {
+	const char *template = "{\n\t\"interface\": \"%s\"\n}\n";
+
+	printf(template, p_stat->interface);
+}
+
 int main(int argc, char *argv[])
 {
 	getconf(argc, argv);
@@ -99,8 +105,10 @@ int main(int argc, char *argv[])
 	conf_get_interface_list();
 
 	// Retrieve information
-	char json[8192];
-	print_netinfo(json);
+	wifi_stat stat;
+	print_netinfo(&stat);
+
+	print_as_json(&stat);
 
 	return EXIT_SUCCESS;
 }
