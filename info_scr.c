@@ -171,6 +171,114 @@ static void display_levels(void)
 	wrefresh(w_levels);
 }
 
+
+
+static void print_levels(void)
+{
+	static float qual, signal, noise, ssnr;
+	/*
+	 * FIXME: revise the scale implementation. It does not work
+	 *        satisfactorily, maybe it is better to have a simple
+	 *        solution using 3 levels of different colour.
+	 */
+	int8_t nscale[2] = { conf.noise_min, conf.noise_max },
+	     lvlscale[2] = { -40, -20};
+	char tmp[0x100];
+	int line;
+	bool noise_data_valid;
+	int sig_qual = -1, sig_qual_max, sig_level;
+
+	noise_data_valid = iw_nl80211_have_survey_data(&linkstat.data);
+	sig_level = linkstat.data.signal_avg ?: linkstat.data.signal;
+
+	/* See comments in iw_cache_update */
+	if (sig_level == 0)
+		sig_level = linkstat.data.bss_signal;
+
+	for (line = 1; line <= WH_LEVEL; line++)
+		mvwclrtoborder(w_levels, line, 1);
+
+	if (linkstat.data.bss_signal_qual) {
+		/* BSS_SIGNAL_UNSPEC is scaled 0..100 */
+		sig_qual     = linkstat.data.bss_signal_qual;
+		sig_qual_max = 100;
+	} else if (sig_level) {
+		if (sig_level < -110)
+			sig_qual = 0;
+		else if (sig_level > -40)
+			sig_qual = 70;
+		else
+			sig_qual = sig_level + 110;
+		sig_qual_max = 70;
+	}
+
+	line = 1;
+
+	/* Noise data is rare. Use the space for spreading out. */
+	if (!noise_data_valid)
+		line++;
+
+	if (sig_qual == -1) {
+		line++;
+	} else {
+		qual = ewma(qual, sig_qual, conf.meter_decay / 100.0);
+
+		mvwaddstr(w_levels, line++, 1, "link quality: ");
+		sprintf(tmp, "%0.f%%  ", (1e2 * qual)/sig_qual_max);
+		waddstr_b(w_levels, tmp);
+		sprintf(tmp, "(%0.f/%d)  ", qual, sig_qual_max);
+		waddstr(w_levels, tmp);
+
+		waddbar(w_levels, line++, qual, 0, sig_qual_max, lvlscale, true);
+	}
+
+	/* Spacer */
+	line++;
+	if (!noise_data_valid)
+		line++;
+
+	if (sig_level != 0) {
+		signal = ewma(signal, sig_level, conf.meter_decay / 100.0);
+
+		mvwaddstr(w_levels, line++, 1, "signal level: ");
+		sprintf(tmp, "%.0f dBm (%s)", signal, dbm2units(signal));
+		waddstr_b(w_levels, tmp);
+
+		waddbar(w_levels, line, signal, conf.sig_min, conf.sig_max,
+			lvlscale, true);
+		if (conf.lthreshold_action)
+			waddthreshold(w_levels, line, signal, conf.lthreshold,
+				      conf.sig_min, conf.sig_max, lvlscale, '>');
+		if (conf.hthreshold_action)
+			waddthreshold(w_levels, line, signal, conf.hthreshold,
+				      conf.sig_min, conf.sig_max, lvlscale, '<');
+	}
+
+	line++;
+
+	if (noise_data_valid) {
+		noise = ewma(noise, linkstat.data.survey.noise, conf.meter_decay / 100.0);
+
+		mvwaddstr(w_levels, line++, 1, "noise level:  ");
+		sprintf(tmp, "%.0f dBm (%s)", noise, dbm2units(noise));
+		waddstr_b(w_levels, tmp);
+
+		waddbar(w_levels, line++, noise, conf.noise_min, conf.noise_max,
+			nscale, false);
+	}
+
+	if (noise_data_valid && sig_level) {
+		ssnr = ewma(ssnr, sig_level - linkstat.data.survey.noise,
+				  conf.meter_decay / 100.0);
+
+		mvwaddstr(w_levels, line++, 1, "SNR:           ");
+		sprintf(tmp, "%.0f dB", ssnr);
+		waddstr_b(w_levels, tmp);
+	}
+
+	wrefresh(w_levels);
+}
+
 static void display_stats(void)
 {
 	char tmp[0x100];
@@ -534,11 +642,184 @@ static void display_info(WINDOW *w_if, WINDOW *w_info)
 	wrefresh(w_info);
 }
 
-void print_netinfo(char *json) {
-	struct iw_nl80211_linkstat data;
-	iw_nl80211_get_linkstat(&data);
+void print_netinfo(wifi_stat *p_stat) {
+	struct iw_dyn_info info;
+	struct iw_range	range;
+	struct iw_nl80211_ifstat ifs;
+	struct iw_nl80211_reg ir;
+	char tmp[0x100];
 
-	const char *template = "{\"interface\":\"%s\", \"ssid\":\"%s\", \"signal_level\": %d}"
+	iw_getinf_range(conf_ifname(), &range);
+	dyn_info_get(&info, conf_ifname());
+	iw_nl80211_getifstat(&ifs);
+	iw_nl80211_getreg(&ir);
+
+	/*
+	 * Interface Part
+	 */
+	sprintf(p_stat->interface, "%s", info.name);
+
+	/* PHY */
+	p_stat->phy = ifs.phy;
+
+	/* Regulatory domain */
+	if (ir.region > 0) {
+		sprintf(p_stat->reg, "%s", dfs_domain_name(ir.region));
+	} else {
+		p_stat->reg[0] = 0;
+	}
+
+	if (ifs.ssid[0]) {
+		sprintf(p_stat->ssid, "%s", ifs.ssid);
+	} else {
+		p_stat->ssid[0] = 0;
+	}
+
+	/*
+	 * Info:
+	 */
+	sprintf(p_stat->mode, "%s", iftype_name(ifs.iftype));
+
+	if (!ether_addr_is_zero(&linkstat.data.bssid)) {
+
+		switch (linkstat.data.status) {
+		case NL80211_BSS_STATUS_ASSOCIATED:
+			sprintf(p_stat->bss_status, "%s", "connected to: ");
+			break;
+		case NL80211_BSS_STATUS_AUTHENTICATED:
+			sprintf(p_stat->bss_status, "%s", "authenticated with: ");
+			break;
+		case NL80211_BSS_STATUS_IBSS_JOINED:
+			sprintf(p_stat->bss_status, "%s", "joined IBSS: ");
+			break;
+		default:
+			sprintf(p_stat->bss_status, "%s", "station: ");
+		}
+		sprintf(p_stat->bss_info, "%s", ether_lookup(&linkstat.data.bssid));
+
+		if (linkstat.data.status == NL80211_BSS_STATUS_ASSOCIATED) {
+			sprintf(p_stat->connected_time, "%s", pretty_time(linkstat.data.connected_time));
+			pstat->inactive_time = (float)linkstat.data.inactive_time/1e3);
+		} else {
+			p_stat->connected_time[0] = 0;
+		}
+	}
+	
+	/* Frequency / channel */
+	if (ifs.freq) {
+		p_stat->freq = ifs.freq);
+
+		/* The following condition should in theory never happen */
+		if (linkstat.data.survey.freq && linkstat.data.survey.freq != ifs.freq) {
+			p_stat->survey_freq = linkstat.data.survey.freq;
+		}
+
+		if (ifs.freq_ctr1 && ifs.freq_ctr1 != ifs.freq) {
+			p_stat->freq_ctr1 = ifs.freq_ctr1;
+		}
+		if (ifs.freq_ctr2 && ifs.freq_ctr2 != ifs.freq_ctr1 && ifs.freq_ctr2 != ifs.freq) {
+			p_stat->freq_ctr2 = ifs.freq_ctr2;
+		}
+
+		p_stat->channel = ieee80211_frequency_to_channel(ifs.freq);
+
+		if (ifs.chan_width >= 0) {
+			sprintf(p_stat->channel_width_name, "%s", channel_width_name(ifs.chan_width));
+		} else if (ifs.chan_type >= 0) {
+			sprintf(p_stat->channel_type_name, "%s", channel_type_name(ifs.chan_type));
+		}
+	} else if (iw_nl80211_have_survey_data(&linkstat.data)) {
+		p_stat->freq = linkstat.data.survey.freq;
+	} else {
+		p_stat->channel = -1;
+		p_stat->freq = -1;
+	}
+
+	/* Channel data */
+	if (iw_nl80211_have_survey_data(&linkstat.data)) {
+		p_stat->channel_survey_active = linkstat.data.survey.time.active;
+		p_stat->channel_survey_busy = linkstat.data.survey.time.busy;
+
+		if (linkstat.data.survey.time.ext_busy) {
+			p_stat->channel_survey_ext_busy = linkstat.data.survey.time.ext_busy;
+		}
+
+		p_stat->channel_survey_rx = linkstat.data.survey.time.rx;
+
+		p_stat->channel_survey_tx = linkstat.data.survey.time.tx;
+
+		if (linkstat.data.survey.time.scan) {
+			p_stat->channel_survey_scan = linkstat.data.survey.time.scan;
+		}
+	} else if (linkstat.data.tx_bitrate[0] && linkstat.data.rx_bitrate[0]) {
+		p_stat->channel_rx_bitrate = linkstat.data.rx_bitrate;
+
+		p_stat->channel_expected_thru = linkstat.data.expected_thru;
+
+		p_stat->channel_tx_bitrate = linkstat.data.tx_bitrate;
+	}
+
+	if (linkstat.data.beacons) {
+		p_stat->beacons = linkstat.data.beacons;
+
+		p_stat->beacon_loss = linkstat.data.beacon_loss;
+
+		p_stat->beacon_avg_sig = linkstat.data.beacon_avg_sig;
+
+		p_stat->beacon_interval = (linkstat.data.beacon_int * 1024.0)/1e6;
+
+		p_stat->dtim_period = linkstat.data.dtim_period;
+	} else {
+		p_stat->flag_cts_protection = linkstat.data.cts_protection;
+		p_stat->flag_wme = linkstat.data.wme;
+		p_stat->flag_tdls = linkstat.data.tdls;
+		p_stat->flag_mfp = linkstat.data.mfp;
+		
+		p_stat->long_preamble = linkstat.data.long_preamble;
+		p_stat->short_slot_time = linkstat.data.short_slot_time;
+	}
+
+	if (info.cap_sens) {
+		p_stat->sensitivity = info.sens;
+		p_stat->sensitivity_range = range.sensitivity;
+	}
+
+	if (info.cap_power)
+		sprintf(p_stat->cap_power, "%s", format_power(&info.power, &range));
+	else
+		sprintf(p_stat->cap_power, "%s", "n/a");
+
+	if (info.cap_txpower && info.txpower.disabled) {
+		sprintf(p_stat->cap_txpower, "%s", "off");
+	} else if (info.cap_txpower) {
+		sprintf(p_stat->cap_txpower, "%s", format_txpower(&info.txpower));
+	}
+
+	wmove(w_info, 6, 1);
+	waddstr(w_info, "retry: ");
+	if (info.cap_retry)
+		sprintf(p_stat->cap_retry, "%s", format_retry(&info.retry, &range));
+	else
+		sprintf(p_stat->cap_retry, "%s", "n/a");
+
+	if (info.cap_rts) {
+		if (info.rts.disabled)
+			p_stat->cap_rts_off = 1;
+		else
+			p_stat->cap_rts = info.rts.value;
+	} else {
+			p_stat->cap_rts = 0;
+	}
+
+	if (info.cap_frag) {
+		if (info.frag.disabled)
+			p_stat->cap_frag_off = 1;
+		else
+			p_stat->cap_frag = info.frag.value;
+	} else {
+		p_stat->cap_frag = 0;
+	}
+
 }
 
 static void display_netinfo(WINDOW *w_net)

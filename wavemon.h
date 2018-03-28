@@ -148,6 +148,84 @@ extern struct wavemon_conf {
 } conf;
 
 /*
+ * Global in-memory representation of current wifi status
+ */
+struct wifi_stat {
+	char interface[64];
+
+	char protocol[64];
+
+	char reg[64];
+
+	char ssid[64];
+
+	char mode[64];
+
+	char bss_status[64];
+
+	char bss_info[64];
+
+	char connected_time[32];
+
+	char channel_width_name[64];
+
+	char channel_type_name[64];
+
+	float inactive_time;
+
+	char has_data; // If there is data for interface
+
+	int phy;
+	
+	int	sig_min, sig_max,
+		noise_min, noise_max;
+
+	int sig_val, noise_val;
+
+	int link_quality, link_val, link_max;
+
+	int retry; // -1 means off
+
+	int rts_cts;
+
+	u_int32_t freq, survey_freq, freq_ctr1, freq_ctr2, channel;
+
+	u_int64_t channel_survey_active, channel_survey_busy, channel_survey_ext_busy;
+
+	u_int64_t channel_survey_rx, channel_survey_tx, channel_survey_scan;
+
+	u_int32_t channel_rx_bitrate, channel_tx_bitrate, channel_expected_thru;
+
+	u_int64_t beacons;
+
+	u_int32_t beacon_loss;
+
+	int8_t beacon_avg_sig, beacon_dtim_period;
+
+	float beacon_interval;
+
+	bool flag_cts_protection, flag_wme, flag_tdls, flag_mfp;
+
+	bool long_preamble, short_slot_time;
+
+	u_int32_t sensitivity, sensitivity_range;
+
+	char cap_power[128];
+
+	char cap_txpower[128];
+
+	char cap_retry[128];
+
+	uint32_t cap_rts;
+
+	bool cap_rts_off;
+
+	uint32_t cap_frag;
+
+	bool cap_frag_off;
+};
+
+/*
  * Initialisation & Configuration
  */
 extern void getconf(int argc, char *argv[]);
