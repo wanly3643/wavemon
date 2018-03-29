@@ -1,0 +1,5 @@
+Makefile
+*.o
+wavestat
+config.status
+config.log
