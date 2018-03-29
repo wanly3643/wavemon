@@ -171,6 +171,75 @@ static void display_levels(void)
 	wrefresh(w_levels);
 }
 
+
+
+void print_wifi_levels(wifi_level_stat *p_stat)
+{
+	static float qual, signal, noise, ssnr;
+
+	bool noise_data_valid;
+	int sig_qual = -1, sig_qual_max, sig_level;
+
+	noise_data_valid = iw_nl80211_have_survey_data(&linkstat.data);
+	sig_level = linkstat.data.signal_avg ?: linkstat.data.signal;
+
+	/* See comments in iw_cache_update */
+	if (sig_level == 0)
+		sig_level = linkstat.data.bss_signal;
+
+	if (linkstat.data.bss_signal_qual) {
+		/* BSS_SIGNAL_UNSPEC is scaled 0..100 */
+		sig_qual     = linkstat.data.bss_signal_qual;
+		sig_qual_max = 100;
+	} else if (sig_level) {
+		if (sig_level < -110)
+			sig_qual = 0;
+		else if (sig_level > -40)
+			sig_qual = 70;
+		else
+			sig_qual = sig_level + 110;
+		sig_qual_max = 70;
+	}
+
+	if (sig_qual == -1) {
+		p_stat->link_quality = -1;
+		p_stat->link_quality_max = -1;
+	} else {
+		qual = ewma(qual, sig_qual, conf.meter_decay / 100.0);
+		p_stat->link_quality = (int)qual;
+		p_stat->link_quality_max = sig_qual_max;
+	}
+
+	if (sig_level != 0) {
+		signal = ewma(signal, sig_level, conf.meter_decay / 100.0);
+		p_stat->signal_level = (int)signal;
+	} else {
+		p_stat->signal_level = -1;
+	}
+
+	p_stat->signal_level_max = conf.sig_max;
+	p_stat->signal_level_min = conf.sig_min;
+
+	if (noise_data_valid) {
+		noise = ewma(noise, linkstat.data.survey.noise, conf.meter_decay / 100.0);
+		p_stat->noise_level = (int)noise;
+	} else {
+		p_stat->noise_level = -1;
+	}
+
+	p_stat->noise_level_max = conf.noise_max;
+	p_stat->noise_level_min = conf.noise_min;
+
+	if (noise_data_valid && sig_level) {
+		ssnr = ewma(ssnr, sig_level - linkstat.data.survey.noise,
+				  conf.meter_decay / 100.0);
+
+		p_stat->ssnr = (int)ssnr;
+	} else {
+		p_stat->ssnr = -1;
+	}
+}
+
 static void display_stats(void)
 {
 	char tmp[0x100];
@@ -244,6 +313,53 @@ static void display_stats(void)
 	}
 	wclrtoborder(w_stats);
 	wrefresh(w_stats);
+}
+
+void print_wifi_statistics(wifi_statistics *p_stat)
+{
+	if (linkstat.data.rx_packets) {
+		p_stat->rx_packets = linkstat.data.rx_packets;
+		p_stat->rx_bytes = linkstat.data.rx_bytes;
+	} else {
+		p_stat->rx_packets = -1;
+		p_stat->rx_bytes = -1;
+	}
+
+	p_stat->rx_bitrate[0] = 0;
+	if (iw_nl80211_have_survey_data(&linkstat.data)) {
+		if (linkstat.data.rx_bitrate[0]) {
+			sprintf(p_stat->rx_bitrate, "%s", linkstat.data.rx_bitrate);
+		}
+	}
+
+	if (linkstat.data.rx_drop_misc) {
+		p_stat->rx_drop_misc = linkstat.data.rx_drop_misc;
+	}
+
+	/*
+	 * Interface TX stats
+	 */
+
+	if (linkstat.data.tx_packets) {
+		p_stat->tx_packets = linkstat.data.tx_packets;
+		p_stat->tx_bytes = linkstat.data.tx_bytes;
+	} else {
+		p_stat->tx_packets = -1;
+		p_stat->tx_bytes = -1;
+	}
+
+	p_stat->tx_bitrate[0] = 0;
+	if (iw_nl80211_have_survey_data(&linkstat.data) && linkstat.data.tx_bitrate[0]) {
+		sprintf(p_stat->tx_bitrate, "%s", linkstat.data.tx_bitrate);
+	}
+
+	if (linkstat.data.tx_retries) {
+		p_stat->tx_retries = linkstat.data.tx_retries;
+	}
+
+	if (linkstat.data.tx_failed) {
+		p_stat->tx_failed = linkstat.data.tx_failed;
+	}
 }
 
 static void display_info(WINDOW *w_if, WINDOW *w_info)
@@ -851,4 +967,15 @@ void scr_info_fini(void)
 	delwin(w_stats);
 	delwin(w_levels);
 	delwin(w_if);
+}
+
+void get_wifi_stat(wifi_stat *p_stat)
+{
+	iw_nl80211_get_linkstat(&linkstat.data);
+
+	print_netinfo(p_stat);
+
+	print_wifi_levels(&(p_stat->level));
+
+	print_wifi_statistics(&(p_stat->statistics));
 }

@@ -92,9 +92,9 @@ static const struct {
 static volatile sig_atomic_t	env_winch_ready;
 
 void print_as_json(wifi_stat *p_stat) {
-	const char *template = "{\n\t\"interface\": \"%s\"\n}\n";
+	const char *template = "{\n\t\"interface\": \"%s\"\n\t\"signal_level\": %d\n\t\"rx\": %d\n}\n";
 
-	printf(template, p_stat->interface);
+	printf(template, p_stat->interface, p_stat->level.signal_level, p_stat->statistics.rx_packets);
 }
 
 int main(int argc, char *argv[])
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 
 	// Retrieve information
 	wifi_stat stat;
-	print_netinfo(&stat);
+	get_wifi_stat(&stat);
 
 	print_as_json(&stat);
 

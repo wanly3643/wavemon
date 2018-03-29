@@ -150,7 +150,33 @@ extern struct wavemon_conf {
 /*
  * Global in-memory representation of current wifi status
  */
-typedef struct _wifi_stat{
+
+typedef struct _wifi_level_stat {
+	int link_quality, link_quality_max;
+
+	int signal_level, signal_level_max, signal_level_min;
+
+	int noise_level, noise_level_max, noise_level_min;
+
+	int ssnr;
+} wifi_level_stat;
+
+typedef struct _wifi_statistics {
+	u_int32_t rx_packets, rx_bytes;
+
+	char rx_bitrate[32];
+
+	u_int64_t rx_drop_misc;
+
+	u_int32_t tx_packets, tx_bytes, tx_retries;
+
+	char tx_bitrate[32];
+
+	u_int64_t tx_failed;
+
+} wifi_statistics;
+
+typedef struct _wifi_stat {
 	char interface[64];
 
 	char protocol[64];
@@ -225,6 +251,12 @@ typedef struct _wifi_stat{
 	uint32_t cap_frag;
 
 	bool cap_frag_off;
+
+	// Levels
+	wifi_level_stat level;
+
+	// Statictics
+	wifi_statistics statistics;
 } wifi_stat;
 
 /*
@@ -363,7 +395,7 @@ static inline int cp_from_scale(float value, int8_t const *cscale, bool reverse)
 extern const char *conf_ifname(void);
 extern void conf_get_interface_list(void);
 extern void iw_get_interface_list(char** if_list, size_t max_entries);
-extern void print_netinfo(wifi_stat *p_stat);
+extern void get_wifi_stat(wifi_stat *p_stat);
 
 /*
  *	Error handling
