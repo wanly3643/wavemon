@@ -91,10 +91,68 @@ static const struct {
  */
 static volatile sig_atomic_t	env_winch_ready;
 
-void print_as_json(wifi_stat *p_stat) {
-	const char *template = "{\n\t\"interface\": \"%s\"\n\t\"signal_level\": %d\n\t\"rx\": %d\n}\n";
+const char *str_true = "true";
+const char *str_false = "false";
 
-	printf(template, p_stat->interface, p_stat->level.signal_level, p_stat->statistics.rx_packets);
+const char* bool_str(bool bln) {
+	if (bln) {
+		return str_true;
+	} else {
+		return str_false;
+	}
+}
+
+void print_as_json(wifi_stat *p_stat) {
+	const char *template = 
+		"{\n"
+		"\t\"interface\": \"%s\",\n"
+		"\t\"link_quality\": %d,\n"
+		"\t\"signal_level\": %d,\n"
+		"\t\"noise_level\": %d,\n"
+		"\t\"ssnr\": %d,\n"
+		"\t\"rx\": %d,\n"
+		"\t\"rx_drop\": %ld,\n"
+		"\t\"tx\": %d,\n"
+		"\t\"tx_retries\": %d,\n"
+		"\t\"tx_failed\": %d,\n"
+		"\t\"connected_time\": %d,\n"
+		"\t\"inactive_time\": %d,\n"
+		"\t\"mode\": \"%s\",\n"
+		"\t\"channel\": %d,\n"
+		"\t\"frequency\": %d,\n"
+		"\t\"long_preamble\": %s,\n"
+		"\t\"short_slot\": %s,\n"
+		"\t\"cts_protection\": %s,\n"
+		"\t\"wme\": %s,\n"
+		"\t\"tdls\": %s,\n"
+		"\t\"mfp\": %s,\n"
+		"\t\"ssid\": \"%s\"\n"
+		"}\n";
+
+	printf(template, 
+		p_stat->interface,
+		p_stat->level.link_quality,
+		p_stat->level.signal_level,
+		p_stat->level.noise_level,
+		p_stat->level.ssnr,
+		p_stat->statistics.rx_packets,
+		p_stat->statistics.rx_drop_misc,
+		p_stat->statistics.tx_packets,
+		p_stat->statistics.tx_retries,
+		p_stat->statistics.tx_failed,
+		p_stat->statistics.connected_time,
+		p_stat->statistics.inactive_time,
+		p_stat->mode,
+		p_stat->channel,
+		p_stat->freq,
+		bool_str(p_stat->long_preamble),
+		bool_str(p_stat->short_slot_time),
+		bool_str(p_stat->flag_cts_protection),
+		bool_str(p_stat->flag_wme),
+		bool_str(p_stat->flag_tdls),
+		bool_str(p_stat->flag_mfp),
+		p_stat->ssid
+	);
 }
 
 int main(int argc, char *argv[])

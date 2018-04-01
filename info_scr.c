@@ -321,8 +321,8 @@ void print_wifi_statistics(wifi_statistics *p_stat)
 		p_stat->rx_packets = linkstat.data.rx_packets;
 		p_stat->rx_bytes = linkstat.data.rx_bytes;
 	} else {
-		p_stat->rx_packets = -1;
-		p_stat->rx_bytes = -1;
+		p_stat->rx_packets = 0;
+		p_stat->rx_bytes = 0;
 	}
 
 	p_stat->rx_bitrate[0] = 0;
@@ -344,8 +344,8 @@ void print_wifi_statistics(wifi_statistics *p_stat)
 		p_stat->tx_packets = linkstat.data.tx_packets;
 		p_stat->tx_bytes = linkstat.data.tx_bytes;
 	} else {
-		p_stat->tx_packets = -1;
-		p_stat->tx_bytes = -1;
+		p_stat->tx_packets = 0;
+		p_stat->tx_bytes = 0;
 	}
 
 	p_stat->tx_bitrate[0] = 0;

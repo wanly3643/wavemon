@@ -162,17 +162,15 @@ typedef struct _wifi_level_stat {
 } wifi_level_stat;
 
 typedef struct _wifi_statistics {
-	u_int32_t rx_packets, rx_bytes;
+	u_int32_t inactive_time, connected_time, rx_packets, rx_bytes;
 
-	char rx_bitrate[32];
+	char rx_bitrate[100];
 
 	u_int64_t rx_drop_misc;
 
-	u_int32_t tx_packets, tx_bytes, tx_retries;
+	u_int32_t tx_packets, tx_bytes, tx_retries, tx_failed;
 
-	char tx_bitrate[32];
-
-	u_int64_t tx_failed;
+	char tx_bitrate[100];
 
 } wifi_statistics;
 
