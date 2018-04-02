@@ -319,49 +319,31 @@ void print_wifi_statistics(wifi_statistics *p_stat)
 {
 	p_stat->inactive_time = linkstat.data.inactive_time;
 	p_stat->connected_time = linkstat.data.connected_time * 1e3;
-	if (linkstat.data.rx_packets) {
-		p_stat->rx_packets = linkstat.data.rx_packets;
-		p_stat->rx_bytes = linkstat.data.rx_bytes;
-	} else {
-		p_stat->rx_packets = 0;
-		p_stat->rx_bytes = 0;
-	}
+	p_stat->rx_packets = linkstat.data.rx_packets;
+	p_stat->rx_bytes = linkstat.data.rx_bytes;
 
 	p_stat->rx_bitrate[0] = 0;
+	p_stat->tx_bitrate[0] = 0;
 	if (iw_nl80211_have_survey_data(&linkstat.data)) {
 		if (linkstat.data.rx_bitrate[0]) {
 			sprintf(p_stat->rx_bitrate, "%s", linkstat.data.rx_bitrate);
 		}
+		if (linkstat.data.tx_bitrate[0]) {
+			sprintf(p_stat->tx_bitrate, "%s", linkstat.data.tx_bitrate);
+		}
 	}
 
-	if (linkstat.data.rx_drop_misc) {
-		p_stat->rx_drop_misc = linkstat.data.rx_drop_misc;
-	}
+	p_stat->rx_drop_misc = linkstat.data.rx_drop_misc;
 
 	/*
 	 * Interface TX stats
 	 */
 
-	if (linkstat.data.tx_packets) {
-		p_stat->tx_packets = linkstat.data.tx_packets;
-		p_stat->tx_bytes = linkstat.data.tx_bytes;
-	} else {
-		p_stat->tx_packets = 0;
-		p_stat->tx_bytes = 0;
-	}
+	p_stat->tx_packets = linkstat.data.tx_packets;
+	p_stat->tx_bytes = linkstat.data.tx_bytes;
 
-	p_stat->tx_bitrate[0] = 0;
-	if (iw_nl80211_have_survey_data(&linkstat.data) && linkstat.data.tx_bitrate[0]) {
-		sprintf(p_stat->tx_bitrate, "%s", linkstat.data.tx_bitrate);
-	}
-
-	if (linkstat.data.tx_retries) {
-		p_stat->tx_retries = linkstat.data.tx_retries;
-	}
-
-	if (linkstat.data.tx_failed) {
-		p_stat->tx_failed = linkstat.data.tx_failed;
-	}
+	p_stat->tx_retries = linkstat.data.tx_retries;
+	p_stat->tx_failed = linkstat.data.tx_failed;
 }
 
 static void display_info(WINDOW *w_if, WINDOW *w_info)
@@ -688,6 +670,7 @@ void print_netinfo(wifi_stat *p_stat) {
 	/*
 	 * Info:
 	 */
+	p_stat->mode[0] = 0;
 	sprintf(p_stat->mode, "%s", iftype_name(ifs.iftype));
 
 	if (!ether_addr_is_zero(&linkstat.data.bssid)) {
