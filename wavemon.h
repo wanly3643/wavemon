@@ -226,12 +226,12 @@ typedef struct _wifi_stat {
 
 	float beacon_interval;
 
-	bool cts_protection:1,
+	bool flag_cts_protection:1,
 		 long_preamble:1,
 		 short_slot_time:1,
-		 wme:1,
-		 mfp:1,
-		 tdls:1;
+		 flag_wme:1,
+		 flag_mfp:1,
+		 flag_tdls:1;
 
 	uint32_t sensitivity, sensitivity_range;
 
