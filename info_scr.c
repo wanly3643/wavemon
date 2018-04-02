@@ -692,6 +692,11 @@ void print_netinfo(wifi_stat *p_stat) {
 	}
 	
 	/* Frequency / channel */
+	p_stat->freq = 0;
+	p_stat->survey_freq = 0;
+	p_stat->freq_ctr1 = 0;
+	p_stat->freq_ctr2 = 0;
+	p_stat->channel = -1;
 	if (ifs.freq) {
 		p_stat->freq = ifs.freq;
 

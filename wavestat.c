@@ -118,7 +118,7 @@ void print_as_json(wifi_stat *p_stat) {
 		"\t\"tx_packets\": %d,\n"
 		"\t\"tx_bitrate\": \"%s\",\n"
 		"\t\"tx_retries\": %'u,\n"
-		"\t\"tx_failed\": %'u',\n"
+		"\t\"tx_failed\": %'u,\n"
 		"\t\"connected_time\": %d,\n"
 		"\t\"inactive_time\": %d,\n"
 		"\t\"mode\": \"%s\",\n"
