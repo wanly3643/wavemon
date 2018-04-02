@@ -318,7 +318,7 @@ static void display_stats(void)
 void print_wifi_statistics(wifi_statistics *p_stat)
 {
 	p_stat->inactive_time = linkstat.data.inactive_time;
-	p_stat->connected_time = linkstat.data.connected_time * 1e3;
+	p_stat->connected_time = linkstat.data.connected_time;
 	p_stat->rx_packets = linkstat.data.rx_packets;
 	p_stat->rx_bytes = linkstat.data.rx_bytes;
 
