@@ -60,12 +60,12 @@ void print_as_json(wifi_stat *p_stat) {
 		"\t\"mode\": \"%s\",\n"
 		"\t\"channel\": %d,\n"
 		"\t\"frequency\": %d,\n"
-		// "\t\"long_preamble\": %s,\n"
-		// "\t\"short_slot\": %s,\n"
-		// "\t\"cts_protection\": %s,\n"
-		// "\t\"wme\": %s,\n"
-		// "\t\"tdls\": %s,\n"
-		// "\t\"mfp\": %s,\n"
+		"\t\"long_preamble\": %s,\n"
+		"\t\"short_slot\": %s,\n"
+		"\t\"cts_protection\": %s,\n"
+		"\t\"wme\": %s,\n"
+		"\t\"tdls\": %s,\n"
+		"\t\"mfp\": %s,\n"
 		"\t\"ssid\": \"%s\"\n"
 		"}\n";
 
@@ -89,12 +89,12 @@ void print_as_json(wifi_stat *p_stat) {
 		p_stat->mode,
 		p_stat->channel,
 		p_stat->freq,
-		// bool_str(p_stat->long_preamble),
-		// bool_str(p_stat->short_slot_time),
-		// bool_str(p_stat->flag_cts_protection),
-		// bool_str(p_stat->flag_wme),
-		// bool_str(p_stat->flag_tdls),
-		// bool_str(p_stat->flag_mfp),
+		bool_str(p_stat->long_preamble),
+		bool_str(p_stat->short_slot_time),
+		bool_str(p_stat->flag_cts_protection),
+		bool_str(p_stat->flag_wme),
+		bool_str(p_stat->flag_tdls),
+		bool_str(p_stat->flag_mfp),
 		p_stat->ssid
 	);
 }
