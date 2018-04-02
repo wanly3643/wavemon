@@ -79,7 +79,7 @@ void print_as_json(wifi_stat *p_stat) {
 		p_stat->level.ssnr,
 		p_stat->statistics.rx_packets,
 		p_stat->statistics.rx_bitrate,
-		((unsigned long long))p_stat->statistics.rx_drop_misc,
+		(unsigned long long)(p_stat->statistics.rx_drop_misc),
 		p_stat->statistics.tx_packets,
 		p_stat->statistics.tx_bitrate,
 		p_stat->statistics.tx_retries,
