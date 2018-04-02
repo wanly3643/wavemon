@@ -106,13 +106,17 @@ void print_as_json(wifi_stat *p_stat) {
 	const char *template = 
 		"{\n"
 		"\t\"interface\": \"%s\",\n"
+		"\t\"phy\": %d,\n"
+		"\t\"reg\": \"%s\",\n"
 		"\t\"link_quality\": %d,\n"
 		"\t\"signal_level\": %d,\n"
 		"\t\"noise_level\": %d,\n"
 		"\t\"ssnr\": %d,\n"
-		"\t\"rx\": %d,\n"
+		"\t\"rx_packets\": %d,\n"
+		"\t\"rx_bitrate\": \"%s\",\n"
 		"\t\"rx_drop\": %ld,\n"
-		"\t\"tx\": %d,\n"
+		"\t\"tx_packets\": %d,\n"
+		"\t\"tx_bitrate\": \"%s\",\n"
 		"\t\"tx_retries\": %d,\n"
 		"\t\"tx_failed\": %d,\n"
 		"\t\"connected_time\": %d,\n"
@@ -131,13 +135,17 @@ void print_as_json(wifi_stat *p_stat) {
 
 	printf(template, 
 		p_stat->interface,
+		p_stat->phy,
+		p_stat->reg,
 		p_stat->level.link_quality,
 		p_stat->level.signal_level,
 		p_stat->level.noise_level,
 		p_stat->level.ssnr,
 		p_stat->statistics.rx_packets,
+		p_stat->statistics.rx_bitrate,
 		p_stat->statistics.rx_drop_misc,
 		p_stat->statistics.tx_packets,
+		p_stat->statistics.tx_bitrate,
 		p_stat->statistics.tx_retries,
 		p_stat->statistics.tx_failed,
 		p_stat->statistics.connected_time,

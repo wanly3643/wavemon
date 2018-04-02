@@ -189,13 +189,9 @@ typedef struct _wifi_stat {
 
 	char bss_info[64];
 
-	char connected_time[32];
-
 	char channel_width_name[64];
 
 	char channel_type_name[64];
-
-	float inactive_time;
 
 	char has_data; // If there is data for interface
 

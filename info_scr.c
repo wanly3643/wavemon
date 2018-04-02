@@ -224,7 +224,7 @@ void print_wifi_levels(wifi_level_stat *p_stat)
 		noise = ewma(noise, linkstat.data.survey.noise, conf.meter_decay / 100.0);
 		p_stat->noise_level = (int)noise;
 	} else {
-		p_stat->noise_level = -1;
+		p_stat->noise_level = 0;
 	}
 
 	p_stat->noise_level_max = conf.noise_max;
@@ -317,6 +317,8 @@ static void display_stats(void)
 
 void print_wifi_statistics(wifi_statistics *p_stat)
 {
+	p_stat->inactive_time = linkstat.data.inactive_time;
+	p_stat->connected_time = linkstat.data.connected_time * 1e3;
 	if (linkstat.data.rx_packets) {
 		p_stat->rx_packets = linkstat.data.rx_packets;
 		p_stat->rx_bytes = linkstat.data.rx_bytes;
@@ -704,13 +706,6 @@ void print_netinfo(wifi_stat *p_stat) {
 			sprintf(p_stat->bss_status, "%s", "station: ");
 		}
 		sprintf(p_stat->bss_info, "%s", ether_lookup(&linkstat.data.bssid));
-
-		if (linkstat.data.status == NL80211_BSS_STATUS_ASSOCIATED) {
-			sprintf(p_stat->connected_time, "%s", pretty_time(linkstat.data.connected_time));
-			p_stat->inactive_time = (float)linkstat.data.inactive_time/1e3;
-		} else {
-			p_stat->connected_time[0] = 0;
-		}
 	}
 	
 	/* Frequency / channel */
