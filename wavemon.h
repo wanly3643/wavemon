@@ -162,13 +162,13 @@ typedef struct _wifi_level_stat {
 } wifi_level_stat;
 
 typedef struct _wifi_statistics {
-	u_int32_t inactive_time, connected_time, rx_packets, rx_bytes;
+	uint32_t inactive_time, connected_time, rx_packets, rx_bytes;
 
 	char rx_bitrate[100];
 
-	u_int64_t rx_drop_misc;
+	uint64_t rx_drop_misc;
 
-	u_int32_t tx_packets, tx_bytes, tx_retries, tx_failed;
+	uint32_t tx_packets, tx_bytes, tx_retries, tx_failed;
 
 	char tx_bitrate[100];
 
@@ -208,19 +208,19 @@ typedef struct _wifi_stat {
 
 	int rts_cts;
 
-	u_int32_t freq, survey_freq, freq_ctr1, freq_ctr2, channel;
+	uint32_t freq, survey_freq, freq_ctr1, freq_ctr2, channel;
 
-	u_int64_t channel_survey_active, channel_survey_busy, channel_survey_ext_busy;
+	uint64_t channel_survey_active, channel_survey_busy, channel_survey_ext_busy;
 
-	u_int64_t channel_survey_rx, channel_survey_tx, channel_survey_scan;
+	uint64_t channel_survey_rx, channel_survey_tx, channel_survey_scan;
 
 	char channel_rx_bitrate[32], channel_tx_bitrate[32];
 	
 	uint32_t channel_expected_thru;
 
-	u_int64_t beacons;
+	uint64_t beacons;
 
-	u_int32_t beacon_loss;
+	uint32_t beacon_loss;
 
 	int8_t beacon_avg_sig, beacon_dtim_period;
 
@@ -230,7 +230,7 @@ typedef struct _wifi_stat {
 
 	bool long_preamble, short_slot_time;
 
-	u_int32_t sensitivity, sensitivity_range;
+	uint32_t sensitivity, sensitivity_range;
 
 	char cap_power[128];
 
