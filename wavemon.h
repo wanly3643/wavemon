@@ -38,7 +38,7 @@
 
 #include "llist.h"
 
-#define CFNAME	".wavemonrc"
+#define CFNAME	".wavestatrc"
 
 /**
  * Minimum screen dimensions.
@@ -264,7 +264,7 @@ extern void getconf(int argc, char *argv[]);
 /* Configuration items to manipulate the current configuration */
 struct conf_item {
 	char	*name,		/* name for preferences screen */
-		*cfname;	/* name for ~/.wavemonrc */
+		*cfname;	/* name for ~/.wavestatrc */
 
 	enum {			/* type of parameter */
 		t_int,		/* @v.i is interpreted as raw value */
