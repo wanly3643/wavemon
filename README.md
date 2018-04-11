@@ -57,3 +57,34 @@ If you have changed some of the autoconf files or use a git version, run
 ## Bugs?
 
 Send bug reports, comments, and suggestions by opening an issue on [github](https://github.com/uoaerg/wavemon/issues).
+
+## Dependency issues while building under some versions of Raspbian
+There maybe some problems while installing the dev package to build the prgram. Here are steps to resolve:
+
+Install the dev package ignoring the dependencies version issues
+
+```
+apt-get download libncurses5-dev libnl-3-dev libnl-genl-3-dev
+
+sudo dpkg -i --ignore-depends=libtinfo5,libncurses5,libtinfo-dev,ncurses-bin libncurses5-dev_5.9-10_armhf.deb
+
+sudo dpkg -i --ignore-depends=libnl-3-200 libnl-3-dev_3.2.7-4+deb7u1_armhf.deb
+
+sudo dpkg -i --ignore-depends=libnl-genl-3-200 libnl-genl-3-dev_3.2.7-4+deb7u1_armhf.deb
+
+rm -f libncurses5-dev_5.9-10_armhf.deb libnl-3-dev_3.2.7-4+deb7u1_armhf.deb libnl-genl-3-dev_3.2.7-4+deb7u1_armhf.deb
+
+```
+
+Recreate the symbol link 
+
+```
+cd /lib/arm-linux-gnueabihf/
+
+sudo ln -s -f libnl-3.so.2000.19.0 libnl-genl-3.so
+
+sudo ln -s -f libnl-3.so.200.19.0 libnl-3.so
+
+sudo ldconfig
+
+```
