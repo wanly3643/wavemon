@@ -174,6 +174,24 @@ typedef struct _wifi_statistics {
 
 } wifi_statistics;
 
+typedef struct _net_flag {
+	bool up;
+	bool running;
+	bool lower_up;
+	bool dormant;
+	bool master;
+	bool slave;
+	bool point_to_point;
+	bool dynamic;
+	bool broadcast;
+	bool multicast;
+	bool all_multi;
+	bool no_arp;
+	bool no_trailers;
+	bool promiscuous;
+	bool debugging;
+} net_flag;
+
 typedef struct _wifi_stat {
 	char interface[64];
 
@@ -184,6 +202,12 @@ typedef struct _wifi_stat {
 	char ssid[64];
 
 	char mode[64];
+
+	char mac[32];
+
+	char ip[32];
+
+	char bcast_ip[32];
 
 	char bss_status[64];
 
@@ -254,6 +278,12 @@ typedef struct _wifi_stat {
 
 	// Statictics
 	wifi_statistics statistics;
+
+	// net flags
+	net_flag net_flags;
+
+	uint16_t		mtu;
+	uint16_t		txqlen;
 } wifi_stat;
 
 /*

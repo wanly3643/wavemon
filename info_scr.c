@@ -634,7 +634,7 @@ static void display_info(WINDOW *w_if, WINDOW *w_info)
 	wrefresh(w_info);
 }
 
-void print_netinfo(wifi_stat *p_stat) {
+void print_info(wifi_stat *p_stat) {
 	struct iw_dyn_info info;
 	struct iw_range	range;
 	struct iw_nl80211_ifstat ifs;
@@ -786,6 +786,7 @@ void print_netinfo(wifi_stat *p_stat) {
 	else
 		sprintf(p_stat->cap_retry, "%s", "n/a");
 
+	p_stat->cap_rts = 0;
 	if (info.cap_rts) {
 		if (info.rts.disabled)
 			p_stat->cap_rts_off = 1;
@@ -795,6 +796,7 @@ void print_netinfo(wifi_stat *p_stat) {
 			p_stat->cap_rts = 0;
 	}
 
+	p_stat->cap_frag = 0;
 	if (info.cap_frag) {
 		if (info.frag.disabled)
 			p_stat->cap_frag_off = 1;
@@ -898,6 +900,68 @@ static void display_netinfo(WINDOW *w_net)
 	wrefresh(w_net);
 }
 
+void print_netinfo(wifi_stat *p_stat)
+{
+	struct if_info info;
+
+	if_getinf(conf_ifname(), &info);
+
+
+	p_stat->net_flags.up = info.flags & IFF_UP;
+	p_stat->net_flags.running = (info.flags & IFF_RUNNING);		/* Interface RFC2863 OPER_UP	*/
+
+	p_stat->net_flags.lower_up = 0;
+#ifdef IFF_LOWER_UP	/* Linux 2.6.17 */
+	p_stat->net_flags.lower_up = (info.flags & IFF_LOWER_UP);		/* Driver signals L1 up		*/
+#endif
+
+	p_stat->net_flags.dormant = 0;
+#ifdef IFF_DORMANT	/* Linux 2.6.17 */
+	p_stat->net_flags.dormant = (info.flags & IFF_DORMANT);		/* Driver signals dormant	*/
+#endif
+	p_stat->net_flags.master = (info.flags & IFF_MASTER);		/* Master of a load balancer 	*/
+	p_stat->net_flags.slave = (info.flags & IFF_SLAVE);		/* Slave of a load balancer 	*/
+	p_stat->net_flags.point_to_point = (info.flags & IFF_POINTOPOINT);	/* Is a point-to-point link	*/
+	p_stat->net_flags.dynamic = (info.flags & IFF_DYNAMIC);		/* Address is volatile		*/
+	p_stat->net_flags.broadcast = (info.flags & IFF_BROADCAST);		/* Valid broadcast address set	*/
+	p_stat->net_flags.multicast = (info.flags & IFF_MULTICAST);		/* Supports multicast		*/
+	p_stat->net_flags.all_multi = (info.flags & IFF_ALLMULTI);		/* Receive all mcast  packets	*/
+	p_stat->net_flags.no_arp = (info.flags & IFF_NOARP);		/* No ARP protocol		*/
+	p_stat->net_flags.no_trailers = (info.flags & IFF_NOTRAILERS);	/* Avoid use of trailers	*/
+	p_stat->net_flags.promiscuous = (info.flags & IFF_PROMISC);		/* Is in promiscuous mode	*/
+	p_stat->net_flags.debugging = (info.flags & IFF_DEBUG);		/* Internal debugging flag	*/
+
+	sprintf(p_stat->mac, "%s", ether_lookup(&info.hwaddr));
+
+	if (getmaxy(w_net) == WH_NET_MAX) {
+		p_stat->txqlen = info.txqlen;
+	} else {
+		p_stat->txqlen = 0;
+	}
+	waddstr(w_net, "ip: ");
+
+	if (!info.addr.s_addr) {
+		p_stat->ip[0] = 0;
+	} else {
+		sprintf(p_stat->ip, "%s", inet_ntoa(info.addr));
+
+		/* only show bcast address if not set to the obvious default */
+		if (info.bcast.s_addr !=
+		    (info.addr.s_addr | ~info.netmask.s_addr)) {
+			sprintf(p_stat->bcast_ip, "%s", inet_ntoa(info.bcast));
+		} else {
+			p_stat->bcast_ip[0] = 0;
+		}
+	}
+
+	/* 802.11 MTU may be greater than Ethernet MTU (1500) */
+	if (info.mtu && info.mtu != ETH_DATA_LEN) {
+		p_stat->mtu = info.mtu;
+	} else {
+		p_stat->mtu = 0;
+	}
+}
+
 void scr_info_init(void)
 {
 	int line = 0;
@@ -950,6 +1014,8 @@ void scr_info_fini(void)
 void get_wifi_stat(wifi_stat *p_stat)
 {
 	iw_nl80211_get_linkstat(&linkstat.data);
+
+	print_info(p_stat);
 
 	print_netinfo(p_stat);
 

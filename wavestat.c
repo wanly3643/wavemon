@@ -58,6 +58,12 @@ void print_as_json(wifi_stat *p_stat) {
 		"\t\"connected_time\": %d,\n"
 		"\t\"inactive_time\": %d,\n"
 		"\t\"mode\": \"%s\",\n"
+		"\t\"bss_info\": \"%s\",\n"
+		"\t\"power_mgt\": \"%s\",\n"
+		"\t\"tx_power\": \"%s\",\n"
+		"\t\"retry\": \"%s\",\n"
+		"\t\"rts_cts\": %d,\n"
+		"\t\"frag\": %d,\n"
 		"\t\"channel\": %d,\n"
 		"\t\"frequency\": %d,\n"
 		"\t\"long_preamble\": %s,\n"
@@ -66,6 +72,8 @@ void print_as_json(wifi_stat *p_stat) {
 		"\t\"wme\": %s,\n"
 		"\t\"tdls\": %s,\n"
 		"\t\"mfp\": %s,\n"
+		"\t\"ip\": \"%s\",\n"
+		"\t\"mac\": \"%s\",\n"
 		"\t\"ssid\": \"%s\"\n"
 		"}\n";
 
@@ -87,6 +95,12 @@ void print_as_json(wifi_stat *p_stat) {
 		p_stat->statistics.connected_time,
 		p_stat->statistics.inactive_time,
 		p_stat->mode,
+		p_stat->bss_info,
+		p_stat->cap_power,
+		p_stat->cap_txpower,
+		p_stat->cap_retry,
+		p_stat->cap_rts,
+		p_stat->cap_frag,
 		p_stat->channel,
 		p_stat->freq,
 		bool_str(p_stat->long_preamble),
@@ -95,6 +109,8 @@ void print_as_json(wifi_stat *p_stat) {
 		bool_str(p_stat->flag_wme),
 		bool_str(p_stat->flag_tdls),
 		bool_str(p_stat->flag_mfp),
+		p_stat->ip,
+		p_stat->mac,
 		p_stat->ssid
 	);
 }
