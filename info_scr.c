@@ -938,7 +938,6 @@ void print_netinfo(wifi_stat *p_stat)
 	} else {
 		p_stat->txqlen = 0;
 	}
-	waddstr(w_net, "ip: ");
 
 	if (!info.addr.s_addr) {
 		p_stat->ip[0] = 0;
